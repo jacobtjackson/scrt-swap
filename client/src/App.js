@@ -300,8 +300,8 @@ class App extends Component {
             </Typography>
             <p></p>
             <form noValidate>
-              <Grid container spacing={1}>
-                <Grid item sm={12}>
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
                   <FormControlLabel
                     control={
                       <TextField
@@ -313,16 +313,17 @@ class App extends Component {
                       />
                     }
                     label={this.state.maxSwap}
+                    labelPlacement="bottom"
                   />
                 </Grid>
 
-                <Grid item sm={12}>
+                <Grid item xs={12}>
                   {errors.swapAmount.length > 0 && (
                     <span className="error">{errors.swapAmount}</span>
                   )}
                 </Grid>
 
-                <Grid item sm={12}>
+                <Grid item xs={12}>
                   <FormControlLabel
                     control={
                       <TextField
@@ -333,12 +334,15 @@ class App extends Component {
                       />
                     }
                     label=" SCRT"
+                    labelPlacement="bottom"
                   />
+                </Grid>
+                <Grid item xs={12}>
                   {errors.recipientAddress.length > 0 && (
                     <span className="error">{errors.recipientAddress}</span>
                   )}
                 </Grid>
-                <Grid item sm={12}>
+                <Grid item xs={12}>
                   <FormControlLabel
                     control={
                       <Checkbox
@@ -351,7 +355,7 @@ class App extends Component {
                     label="Agree to the terms and conditions"
                   />
                 </Grid>
-                <Grid item sm={12}>
+                <Grid item xs={12}>
                   <StyledButton
                     onClick={this.handleSubmit}
                     disabled={!this.canSubmit()}
