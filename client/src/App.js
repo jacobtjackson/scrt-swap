@@ -201,11 +201,11 @@ class App extends Component {
   };
 
   setInfoMessage = message => {
-    this.setState({ infoMessage: message });
+    this.setState({ infoMessage: message, errorMessage: null });
   };
 
   setErrorMessage = message => {
-    this.setState({ errorMessage: message });
+    this.setState({ errorMessage: message, infoMessage: null });
   };
 
   initiateSwap = async () => {
@@ -235,10 +235,16 @@ class App extends Component {
         .send({
           from: accounts[0],
           gas: 500000
+        })
+        .on("error", function(contractError) {
+          console.error(`Contract error: ${contractError.message}`);
+          self.setErrorMessage("Failed to approve");
+          self.setState({submitting: false});
         });
+
       if (!approveTx.status) {
         self.setErrorMessage("Failed to approve");
-        this.setState({submitting: false});
+        self.setState({submitting: false});
         return;
       } else {
         self.setInfoMessage("Transfer approved. Sign the burnFunds tx in Metamask");
@@ -295,13 +301,13 @@ class App extends Component {
         <CssBaseline />
         <ThemeProvider theme={theme}>
           <div className="App">
-            <Typography component="h1" variant="h5">
+            <Typography component="h1" variant="h5" style={{ marginTop: 50 }}>
               ENG <InputTwoToneIcon fontSize="small" /> SCRT
             </Typography>
             <p></p>
             <form noValidate>
-              <Grid container spacing={1}>
-                <Grid item sm={12}>
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
                   <FormControlLabel
                     control={
                       <TextField
@@ -313,16 +319,19 @@ class App extends Component {
                       />
                     }
                     label={this.state.maxSwap}
+                    labelPlacement="bottom"
                   />
                 </Grid>
 
-                <Grid item sm={12}>
-                  {errors.swapAmount.length > 0 && (
-                    <span className="error">{errors.swapAmount}</span>
-                  )}
-                </Grid>
+                {errors.swapAmount.length > 0 && (
+                  <Grid item xs={12}>
+                    <Typography style={{ color: "red", marginTop: 0 }}>
+                        {errors.swapAmount}
+                    </Typography>
+                  </Grid>
+                )}
 
-                <Grid item sm={12}>
+                <Grid item xs={12}>
                   <FormControlLabel
                     control={
                       <TextField
@@ -333,12 +342,19 @@ class App extends Component {
                       />
                     }
                     label=" SCRT"
+                    labelPlacement="bottom"
                   />
-                  {errors.recipientAddress.length > 0 && (
-                    <span className="error">{errors.recipientAddress}</span>
-                  )}
                 </Grid>
-                <Grid item sm={12}>
+                
+
+                {errors.recipientAddress.length > 0 && (
+                  <Grid item xs={12}>
+                    <Typography style={{ color: "red", marginTop: 0 }}>
+                      {errors.recipientAddress}
+                    </Typography>
+                  </Grid>
+                )}
+                <Grid item xs={12}>
                   <FormControlLabel
                     control={
                       <Checkbox
@@ -351,7 +367,7 @@ class App extends Component {
                     label="Agree to the terms and conditions"
                   />
                 </Grid>
-                <Grid item sm={12}>
+                <Grid item xs={12}>
                   <StyledButton
                     onClick={this.handleSubmit}
                     disabled={!this.canSubmit()}
@@ -370,8 +386,7 @@ class App extends Component {
                   {this.state.transactionHash && (
                     <Link
                       href={"https://etherscan.io/tx/" + this.state.transactionHash}
-                    >
-                    {"https://etherscan.io/tx/" + this.state.transactionHash}
+                    >View on Etherscan
                     </Link>
                   )}
                 </Grid>
