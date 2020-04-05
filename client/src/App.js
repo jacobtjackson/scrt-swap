@@ -16,8 +16,7 @@ import Container from "@material-ui/core/Container";
 import CssBaseline from "@material-ui/core/CssBaseline";
 import Grid from "@material-ui/core/Grid";
 import theme from "./theme";
-
-const cosmos = require("cosmos-lib");
+import { getAccount } from "./utils/cosmos"
 const Web3 = require("web3");
 
 const StyledButton = styled(Button)`
@@ -34,7 +33,7 @@ class App extends Component {
       tokenBalance: null,
       swapAmount: null,
       recipientAddress: null,
-      recipientAddressBytes: null,
+      recipientBalance: null,
       web3: null,
       accounts: null,
       contract: null,
@@ -52,7 +51,7 @@ class App extends Component {
     };
   }
 
-  handleChange = event => {
+  handleChange = async event => {
     const { name, value, checked } = event.target;
     const { errors, tokenBalance } = this.state;
 
@@ -79,15 +78,27 @@ class App extends Component {
 
       case "recipientAddress":
         errors.recipientAddress = "";
-        try {
-          // checksum
-          const bytes32 = cosmos.address.getBytes32(value, "enigma");
-          this.setState({
-            recipientAddress: value,
-            recipientAddressBytes: bytes32.toString("hex")
-          });
-        } catch (error) {
-          errors.recipientAddress = error.message;
+
+        if (value.length === 0) {
+          errors.recipientAddress = "Recipient address is required";
+        } else {
+            try {
+              // checksum
+              try {
+                const account = await getAccount(
+                  "https://kamut-lcd.chainofsecrets.org/",
+                  value)
+                this.setState({
+                  recipientAddress: value,
+                  recipientBalance: account.balance[0].amount + " USCRT"
+                });
+              } catch (e) {
+                errors.recipientAddress = e.message;
+              }
+              
+            } catch (error) {
+              errors.recipientAddress = error.message;
+            }
         }
         break;
 
@@ -253,7 +264,7 @@ class App extends Component {
 
     await contract.methods
       .burnFunds(
-        Web3.utils.fromAscii(self.state.recipientAddressBytes),
+        Web3.utils.fromAscii(self.state.recipientAddress),
         swapAmountWei
       )
       .send({
@@ -341,7 +352,7 @@ class App extends Component {
                         onChange={this.handleChange}
                       />
                     }
-                    label=" SCRT"
+                    label={this.state.recipientBalance}
                     labelPlacement="bottom"
                   />
                 </Grid>
