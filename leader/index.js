@@ -76,10 +76,41 @@ class Leader {
         );
     }
 
+    async retrySubmittedSwap (transactionHash) {
+        logger.info(`Retrying transactionHash=${transactionHash}`);
+                await this.db.updateSwapStatus(transactionHash, '', SWAP_STATUS_UNSIGNED).catch(
+            error => logger.error(`Failed to update value in database: ${error}`)
+        );
+    }
+
     async updateConfirmedTransaction (ethTxHash, mintTxHash) {
         await this.db.updateSwapStatus(ethTxHash, mintTxHash, SWAP_STATUS_CONFIRMED).catch(
             error => logger.error(`Failed to update value in database: ${error}`)
         );
+    }
+
+    async statusCheck(swap, result, attempts = 1) {
+        const self = this;
+        var done = false;
+        setTimeout(async function() {
+            try{
+                done = await self.tokenSwapClient.isSwapDone(swap.transactionHash)
+                if (done) {
+                    logger.info(`Completing txHash=${result.txhash}`);
+                    self.updateConfirmedTransaction(swap.transactionHash, result.txhash);
+                } else {
+                    logger.info(`Rechecking txHash=${result.txhash}`);
+                }
+            } catch (e) {
+                logger.error(`Swap not done yet: ${e}`);
+            }
+            
+            attempts++;
+            if (attempts < 10 && !done) {
+                logger.info(`statusCheck attempt ${attempts}`);
+                self.statusCheck(swap, result, attempts);
+            }
+        }, 1000)
     }
 
     // noinspection FunctionWithMultipleLoopsJS
@@ -103,6 +134,7 @@ class Leader {
                     );
                     if (result.txhash) {
                         await this.db.updateSwapStatus(swap.transactionHash, result.txhash, SWAP_STATUS_SUBMITTED);
+                        await this.statusCheck(swap, result);
                     } else {
                         logger.error(`Txhash not found in returned result: ${result}`);
                         await this.updateFailedSwap(swap.transactionHash);
@@ -120,8 +152,15 @@ class Leader {
             const submittedTxs = await this.db.findAllByStatus(SWAP_STATUS_SUBMITTED);
             await Promise.all(
                 submittedTxs.map(async (swap) => {
-                    if (await this.tokenSwapClient.isSwapDone(swap.transactionHash)) {
-                        await this.updateConfirmedTransaction(swap.transactionHash, swap.mintTransactionHash);
+                    try {
+                        if (await this.tokenSwapClient.isSwapDone(swap.transactionHash)) {
+                            await this.updateConfirmedTransaction(swap.transactionHash, swap.mintTransactionHash);
+                        } else {
+                            await this.retrySubmittedSwap(swap.transactionHash);
+                        }
+                    } catch(e) {
+                        logger.error(`Failed to check swap status of transactionHash: ${swap.transactionHash}, error: ${e}`);
+                        await this.updateFailedSwap(swap.transactionHash);
                     }
                 })
             );
@@ -144,7 +183,7 @@ class Leader {
                 const dbSwap = await this.db.fetchSwap(logBurn.transactionHash);
 
                 if (dbSwap) {
-                    logger.error('Swap already exists for ethTxHash=', logBurn.transactionHash);
+                    logger.error(`Swap already exists for ethTxHash=${logBurn.transactionHash}`);
                 } else {
                     const unsignedTx = await this.tokenSwapClient.generateTokenSwap(
                         logBurn.transactionHash,
@@ -170,7 +209,7 @@ class Leader {
                     await this.db.insertUnsignedSwap(unsignedSwap);
                 }
             } catch (e) {
-                logger.error(`Cannot create unsigned tx: ${logBurn}, error: ${e}`);
+                logger.error(`Cannot create unsigned tx: ${JSON.stringify(logBurn)}, error: ${e}`);
             }
             if (this.done) {
                 logger.info('Stop called. Shutting down leader');

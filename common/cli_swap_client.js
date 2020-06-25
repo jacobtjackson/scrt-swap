@@ -17,7 +17,7 @@ class CliSwapClient {
         this.chainClient = chainClient;
         this.accountName = fromAccount;
         this.multisigAddress = multisigAddress;
-        this.basePath = '~/.enigmacli';
+        this.basePath = config.tmpPath;
         this.password = password;
     }
 
@@ -62,12 +62,23 @@ class CliSwapClient {
     }
 
     async isSwapDone (ethTxHash) {
-        const tokenSwap = await this.getTokenSwap(ethTxHash);
-        if (tokenSwap.length === 0 || tokenSwap.includes('ERROR')) {
-            logger.error(`Returned tokenswap was empty or errored for tx hash: ${ethTxHash}`);
-            throw new Error('Failed to get tokenswap for tx hash');
+        try {
+            const tokenSwap = await this.getTokenSwap(ethTxHash);
+            if (tokenSwap.length === 0 || tokenSwap.includes('Unknown Ethereum tx hash')) {
+                return false;
+            } else if (tokenSwap.includes('ERROR')) {
+                logger.error(`Returned tokenswap was empty or errored for tx hash: ${ethTxHash}`);
+                throw new Error('Failed to get tokenswap for tx hash');
+            }
+            return JSON.parse(tokenSwap).done;
+        } catch (e) {
+            if (e.message.includes('Unknown Ethereum tx hash')) {
+                return false;
+            } else {
+                logger.error(`Returned tokenswap was empty or errored for tx hash: ${ethTxHash}`);
+                throw new Error('Failed to get tokenswap for tx hash');
+            }
         }
-        return JSON.parse(tokenSwap).done;
     }
 
     async getTokenSwap (ethTxHash) {
@@ -88,7 +99,7 @@ class CliSwapClient {
             async (signature) => {
                 const tempName = `${this.basePath}/${this.accountName}_signed_${signature.user}_${signature.transactionHash}.json`;
                 // eslint-disable-next-line no-await-in-loop
-                await writeFile(tempName, signature.signature);
+                await writeFile(tempName, JSON.stringify(signature.signature));
                 sigFiles.push(tempName);
             }
         ));
@@ -113,12 +124,12 @@ class CliSwapClient {
         return readFile(signedFile);
     }
 
-    /**
+  /**
    * Generates a token swap request.
    *
    * @param {*} ethTxHash The burn tx hash
    * @param {*} senderEthAddress Sender's ethereum address
-   * @param {*} amountTokens Number of tokens in wei burnt
+   * @param {*} amountTokens Number of tokens in grains burnt
    * @param {*} recipientAddress Address for newly minted tokens
    */
     async generateTokenSwap (ethTxHash, senderEthAddress, amountTokens, recipientAddress) {

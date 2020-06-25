@@ -11,13 +11,13 @@ const config = convict({
     },
     networkId: {
         format: String,
-        default: '50',
+        default: '1',
         arg: 'NETWORK_ID',
         env: 'NETWORK_ID'
     },
     pollingInterval: {
         format: Number,
-        default: 1000,
+        default: 30000,
         arg: 'POLLING_INTERVAL',
         env: 'POLLING_INTERVAL'
     },
@@ -28,7 +28,7 @@ const config = convict({
         env: 'ETH_PROVIDER'
     },
     multisigAddress: {
-        format: Number,
+        format: String,
         default: 'enigma12345',
         arg: 'multisigAddress',
         env: 'MULTISIG_ADDRESS'
@@ -53,7 +53,7 @@ const config = convict({
     },
     chainClient: {
         format: String,
-        default: 'enigmacli',
+        default: 'kamutcli',
         arg: 'chainClient',
         env: 'CHAIN_CLIENT'
     },
@@ -87,22 +87,42 @@ const config = convict({
         arg: 'broadcastInterval',
         env: 'BROADCAST_INTERVAL'
     },
-    user: {
+    operatorUser: {
         format: String,
         default: '',
-        arg: 'user',
-        env: 'USER'
+        arg: 'operatorUser',
+        env: 'OPERATOR_USER'
     },
     bech32prefix: {
         format: String,
-        default: 'enigma',
+        default: 'kamut',
         arg: 'prefix',
         env: 'PREFIX'
     },
     docker: {
         format: Boolean,
         default: false
-    }
+    },
+    password: {
+        format: String,
+        default: '',
+        arg: 'keyringPassword',
+        env: 'KEYRING_PASSWORD',
+        sensitive: true
+    },
+    tmpPath: {
+        format: String,
+        default: '~/.kamutcli',
+        arg: 'tmpPath',
+        env: 'TMP_PATH',
+        sensitive: true
+    },
+    fromBlock: {
+        format: Number,
+        default: 0,
+        arg: 'fromBlock',
+        env: 'FROM_BLOCK'
+    },
 });
 
 const env = config.get('env');

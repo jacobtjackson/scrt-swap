@@ -69,6 +69,12 @@ class Db {
     }
 
     async insertSignature (user, transactionHash, signature) {
+        const query = { _id: signature.signature };
+        const exists = await this.db.collection(SIGNATURE_COLLECTION).findOne(query);
+        if (exists) {
+            logger.info(`Signature exists for txHash=${transactionHash}`)
+            return
+        }
         const record = {
             _id: signature.signature, user, transactionHash, signature
         };
@@ -100,11 +106,6 @@ class Db {
     async updateSwapStatus (transactionHash, mintTransactionHash, status) {
         logger.info(`updating swap ethTxHash=${transactionHash}, mintTransactionHash=${mintTransactionHash}, \
         status=${status}`);
-        if (!(mintTransactionHash && status)) {
-            return;
-        } if (!status >= SWAP_STATUS_SIGNED && status <= SWAP_STATUS_CONFIRMED) {
-            throw new Error('Invalid status');
-        }
 
         const query = { _id: transactionHash };
 
@@ -113,7 +114,7 @@ class Db {
             if (err) {
                 throw err;
             }
-            logger.info(`Updates transactionHash=${transactionHash}`);
+            logger.info(`Updated transactionHash=${transactionHash}`);
         });
     }
 
@@ -144,7 +145,8 @@ class Db {
         const aboveThresholdUnsignedSwaps = [];
         await Promise.all(unsignedSwaps.map(async (swap) => {
             const { transactionHash, unsignedTx, status, sequence, accountNumber } = swap;
-            const query = { _id: swap.transactionHash };
+            // TODO: Consider indexing this field
+            const query = { transactionHash: swap.transactionHash };
             // Slightly inefficient to fetch results instead on counting, but saves us from querying twice
             const result = await this.db.collection(SIGNATURE_COLLECTION).find(query);
             const signatures = await result.toArray();
