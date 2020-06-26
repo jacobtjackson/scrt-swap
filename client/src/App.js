@@ -459,8 +459,11 @@ class App extends Component {
         <CssBaseline />
         <ThemeProvider theme={theme}>
           <div className="App">
-            <Typography className="h1" component="h1" variant="h4" style={{ marginTop: 50, marginBottom: 10 }}>
+            <Typography className="h1" component="h1" variant="h4" style={{ marginTop: 50 }}>
               Burn ENG for SCRT!
+            </Typography>
+            <Typography className="span" component="span" variant="span" style={{ marginBottom: 10, fontSize: 10 }}>
+              Disclaimer: site is currently alpha. Updates will be made over time.
             </Typography>
             <Box
               fontFamily="h6.fontFamily"
@@ -470,6 +473,42 @@ class App extends Component {
 
               <form noValidate>
               <Grid container spacing={2}>
+                <Typography className="h3" component='h3' variant="h6" align="center" style={{ marginBottom: 10, fontSize: 18, width:"100%"}}>
+                  Create a SCRT Adddress With:
+                </Typography>
+                <StyledButton color="primary"
+                  style={{ fontSize: 12, width:"33%"}}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    let win = window.open('https://secretnodes.org/#/tutorials/ledger-nano-s?id=use-your-ledger-with-the-secret-network', '_blank');
+                    win.focus();
+                  }}
+                >
+                  Ledger
+                </StyledButton>
+                <StyledButton color="primary"
+                  style={{ fontSize: 12, width:"33%"}}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    let win = window.open('https://secretnodes.org/#/tutorials/light-client-mainnet', '_blank');
+                    win.focus();
+                  }}
+                >
+                  Light Client
+                </StyledButton>
+                <StyledButton color="primary"
+                  style={{ fontSize: 12, width:"33%"}}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    let win = window.open('https://mathwallet.org/en-us/', '_blank');
+                    win.focus();
+                  }}
+                >
+                  Mathwallet*
+                </StyledButton>
+                <Typography className="span" component="span" style={{fontSize: 8, width: "100%"}} align='center'>
+                *Mathwallet support goes live June 29th 2020
+                </Typography>
                 <Grid item xs={12}>
                   <FormControlLabel
                     control={
@@ -554,6 +593,15 @@ class App extends Component {
                   >
                     Start Swap
                   </StyledButton>
+                  <StyledButton color="primary"
+                  style={{ marginTop: 20, fontSize: 12, width: "100%"}}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    window.location.href='https://secretnodes.org';
+                  }}
+                >
+                  FAQ
+                </StyledButton>
                   </div>
                 </Grid>
               </Grid>
